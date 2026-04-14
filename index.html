@@ -1,132 +1,515 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="et">
 <head>
 <meta charset="UTF-8">
-<title>Mariin hüppab üle takistuste</title>
+<title>Hoolitse hampstri eest</title>
 <style>
-  body { margin: 0; overflow: hidden; background: #87CEEB; }
-  #score { position:absolute; top:10px; left:10px; color:white; font-family:sans-serif; font-size:20px; z-index:10; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at top, #f5f9ff 0%, #cde0ff 50%, #9db7ff 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #1f3250;
+  }
+  .game-shell {
+    width: min(100%, 1180px);
+    padding: 24px;
+    display: grid;
+    gap: 20px;
+    grid-template-columns: 1.3fr 0.9fr;
+  }
+  .panel {
+    border-radius: 28px;
+    background: rgba(255,255,255,0.96);
+    box-shadow: 0 30px 60px rgba(29, 56, 128, 0.12);
+    border: 1px solid rgba(76, 103, 154, 0.12);
+    padding: 28px;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 22px;
+  }
+  h1 {
+    margin: 0;
+    font-size: clamp(28px, 2.5vw, 38px);
+    letter-spacing: -0.03em;
+  }
+  .score { text-align: right; }
+  .score strong { display: block; font-size: 14px; color: #5a6f96; margin-top: 6px; }
+  .hamster-stage {
+    background: linear-gradient(180deg, #eaf1ff 0%, #f7fbff 100%);
+    border-radius: 26px;
+    padding: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hamster-stage::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at 50% 10%, rgba(255,255,255,0.9), transparent 22%),
+                radial-gradient(circle at 30% 80%, rgba(255,255,255,0.72), transparent 24%),
+                radial-gradient(circle at 70% 80%, rgba(255,255,255,0.82), transparent 25%);
+    pointer-events: none;
+  }
+  .hamster-card {
+    position: relative;
+    width: 100%;
+    min-height: 350px;
+    display: grid;
+    place-items: center;
+  }
+  .hamster {
+    position: relative;
+    width: 190px;
+    height: 170px;
+    animation: bob 1.7s ease-in-out infinite;
+  }
+  .ear {
+    position: absolute;
+    top: 0;
+    width: 48px;
+    height: 50px;
+    background: #ffd6ad;
+    border-radius: 72% 72% 54% 54%;
+    border: 4px solid #d8a87c;
+  }
+  .ear.left { left: 12px; transform: rotate(-8deg); }
+  .ear.right { right: 12px; transform: rotate(8deg); }
+  .body {
+    position: absolute;
+    left: 50%;
+    top: 24px;
+    width: 180px;
+    height: 140px;
+    transform: translateX(-50%);
+    background: #f7c78e;
+    border-radius: 100px 100px 86px 86px;
+    border: 4px solid #d8a87c;
+    box-shadow: inset -8px -8px 14px rgba(255,255,255,0.55);
+  }
+  .face {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 120px;
+    height: 120px;
+    transform: translateX(-50%);
+    background: #ffdfb8;
+    border-radius: 60%;
+    border: 4px solid #d8a87c;
+  }
+  .eye {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: #3b2a20;
+    border-radius: 50%;
+    top: 44px;
+  }
+  .eye.left { left: 28px; }
+  .eye.right { right: 28px; }
+  .cheek {
+    position: absolute;
+    width: 24px;
+    height: 16px;
+    border-radius: 12px;
+    background: #f2a38b;
+    top: 70px;
+  }
+  .cheek.left { left: 12px; }
+  .cheek.right { right: 12px; }
+  .nose {
+    position: absolute;
+    width: 18px;
+    height: 14px;
+    background: #d1634f;
+    border-radius: 50% 50% 60% 60%;
+    left: 50%;
+    top: 60px;
+    transform: translateX(-50%);
+  }
+  .smile {
+    position: absolute;
+    left: 50%;
+    top: 74px;
+    width: 52px;
+    height: 30px;
+    transform: translateX(-50%);
+    border-bottom: 4px solid rgba(71, 39, 22, 0.64);
+    border-radius: 0 0 40px 40px;
+  }
+  .hamster-floor {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    width: 72%;
+    height: 20px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, #d4e7ff 0%, #f5faff 100%);
+    border-radius: 100px;
+  }
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 18px;
+  }
+  .action-card {
+    border-radius: 24px;
+    border: 1px solid rgba(93, 127, 203, 0.12);
+    background: white;
+    padding: 18px;
+    display: grid;
+    gap: 10px;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+  }
+  .action-card:hover { transform: translateY(-2px); box-shadow: 0 16px 30px rgba(62, 100, 175, 0.1); }
+  .action-card:active { transform: translateY(0); }
+  .action-card.disabled { opacity: 0.55; cursor: not-allowed; }
+  .action-title {
+    font-size: 18px;
+    margin: 0;
+    font-weight: 700;
+  }
+  .action-desc {
+    margin: 0;
+    color: #5a6f96;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .action-footer { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+  .action-button {
+    border: none;
+    border-radius: 14px;
+    padding: 10px 14px;
+    background: #5d74c8;
+    color: white;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+  .action-button:hover { background: #4764bb; }
+  .action-button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .status-panel {
+    display: grid;
+    gap: 16px;
+  }
+  .stat-bar {
+    background: #eef4ff;
+    border-radius: 999px;
+    overflow: hidden;
+    height: 16px;
+  }
+  .stat-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    transition: width 0.24s ease;
+  }
+  .stat-label { display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+  .status-box {
+    border-radius: 22px;
+    padding: 20px;
+    border: 1px solid rgba(92, 117, 172, 0.16);
+    background: #fbfdff;
+    color: #23355d;
+    line-height: 1.6;
+  }
+  .row { display: flex; justify-content: space-between; gap: 12px; margin-top: 14px; }
+  .small-card {
+    flex: 1;
+    border-radius: 18px;
+    padding: 18px;
+    background: #f7f9ff;
+    border: 1px solid rgba(93, 127, 200, 0.12);
+    text-align: center;
+  }
+  .small-card strong { display: block; font-size: 16px; margin-bottom: 6px; }
+  .small-card span { color: #5f79a5; font-size: 14px; }
+  .restart-button {
+    width: 100%;
+    border: none;
+    border-radius: 18px;
+    padding: 14px;
+    background: linear-gradient(135deg, #4f6ce2, #3b4ab9);
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.16s ease;
+  }
+  .restart-button:hover { transform: translateY(-1px); }
+  @keyframes bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+  @media (max-width: 900px) {
+    .game-shell { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>
-
-<div id="score">Üle hüpatud: 0 / 67</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
-
+<div class="game-shell">
+  <section class="panel">
+    <div class="header">
+      <div>
+        <h1>Hoolitse hampstri eest</h1>
+        <p style="margin:8px 0 0; color:#5a6f96; font-size:15px;">Kasutage tegevusnuppe või kaardil klõpsamist, et muuta hamstri päev rõõmsaks.</p>
+      </div>
+      <div class="score">
+        <span>Aeg</span>
+        <strong id="timer-value">00:00</strong>
+      </div>
+    </div>
+    <div class="hamster-stage">
+      <div class="hamster-card">
+        <div class="hamster">
+          <div class="ear left"></div>
+          <div class="ear right"></div>
+          <div class="body"></div>
+          <div class="face">
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+            <div class="cheek left"></div>
+            <div class="cheek right"></div>
+            <div class="nose"></div>
+            <div class="smile"></div>
+          </div>
+          <div class="hamster-floor"></div>
+        </div>
+      </div>
+    </div>
+    <div class="action-grid">
+      <div class="action-card" data-action="feed">
+        <div>
+          <h2 class="action-title">Sööta</h2>
+          <p class="action-desc">Anna talle värskeid krõbinaid, et energiat taastada.</p>
+        </div>
+        <div class="action-footer">
+          <button class="action-button" id="feed-button">Sööta</button>
+          <span>+25</span>
+        </div>
+      </div>
+      <div class="action-card" data-action="water">
+        <div>
+          <h2 class="action-title">Vee anna</h2>
+          <p class="action-desc">Täida joogipudel, et hamstri janu kustutada.</p>
+        </div>
+        <div class="action-footer">
+          <button class="action-button" id="water-button">Vee anna</button>
+          <span>+28</span>
+        </div>
+      </div>
+      <div class="action-card" data-action="clean">
+        <div>
+          <h2 class="action-title">Puhasta</h2>
+          <p class="action-desc">Korista puuri, et õhk jääks värske ja lõhnatu.</p>
+        </div>
+        <div class="action-footer">
+          <button class="action-button" id="clean-button">Puhasta</button>
+          <span>+32</span>
+        </div>
+      </div>
+      <div class="action-card" data-action="play">
+        <div>
+          <h2 class="action-title">Mängi</h2>
+          <p class="action-desc">Mängi hamstriga, et talle head meeleolu pakkuda.</p>
+        </div>
+        <div class="action-footer">
+          <button class="action-button" id="play-button">Mängi</button>
+          <span>+28</span>
+        </div>
+      </div>
+    </div>
+  </section>
+  <aside class="panel status-panel">
+    <div class="status-box" id="current-message">Mäng algas! Hoia kõik näitajad üle 40% vähemalt 60 sekundit.</div>
+    <div>
+      <div class="stat-label"><span>Toit</span><span id="food-number">90%</span></div>
+      <div class="stat-bar"><div class="stat-fill" id="food-fill" style="width:90%; background:#f8b562;"></div></div>
+    </div>
+    <div>
+      <div class="stat-label"><span>Vesi</span><span id="water-number">90%</span></div>
+      <div class="stat-bar"><div class="stat-fill" id="water-fill" style="width:90%; background:#62b8ff;"></div></div>
+    </div>
+    <div>
+      <div class="stat-label"><span>Puhas</span><span id="clean-number">85%</span></div>
+      <div class="stat-bar"><div class="stat-fill" id="clean-fill" style="width:85%; background:#7ad5b4;"></div></div>
+    </div>
+    <div>
+      <div class="stat-label"><span>Rõõm</span><span id="play-number">80%</span></div>
+      <div class="stat-bar"><div class="stat-fill" id="play-fill" style="width:80%; background:#ff8bb7;"></div></div>
+    </div>
+    <div class="row">
+      <div class="small-card"><strong id="goal-state">Siht</strong><span>Hoia kõik üle 40%.</span></div>
+      <div class="small-card"><strong id="game-state">Mängus</strong><span>Klõpsa tegevustele, et aidata.</span></div>
+    </div>
+    <button class="restart-button" id="restart-button">Alusta uuesti</button>
+  </aside>
+</div>
 <script>
+const state = {
+  food: 90,
+  water: 90,
+  clean: 85,
+  mood: 80,
+  time: 0,
+  gameOver: false,
+  won: false
+};
+const decay = { food: 0.2, water: 0.18, clean: 0.12, mood: 0.14 };
+const duration = 60;
+const feedButton = document.getElementById('feed-button');
+const waterButton = document.getElementById('water-button');
+const cleanButton = document.getElementById('clean-button');
+const playButton = document.getElementById('play-button');
+const restartButton = document.getElementById('restart-button');
+const messageBox = document.getElementById('current-message');
+const timerValue = document.getElementById('timer-value');
+const foodNumber = document.getElementById('food-number');
+const waterNumber = document.getElementById('water-number');
+const cleanNumber = document.getElementById('clean-number');
+const playNumber = document.getElementById('play-number');
+const foodFill = document.getElementById('food-fill');
+const waterFill = document.getElementById('water-fill');
+const cleanFill = document.getElementById('clean-fill');
+const playFill = document.getElementById('play-fill');
+const actionCards = Array.from(document.querySelectorAll('.action-card'));
 
-// 🔹 Scène ja kaamera
-let scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87CEEB);
-
-let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.set(0, 5, 20);
-
-let renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
-
-// 🔹 Valgustus
-scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-let dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-dirLight.position.set(5,10,7);
-scene.add(dirLight);
-
-// 🔹 Maapind
-const groundGeo = new THREE.PlaneGeometry(500, 100);
-const groundMat = new THREE.MeshStandardMaterial({color:0x228B22});
-let ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI/2;
-scene.add(ground);
-
-// 🔹 Mariin placeholder (punane kuubik)
-let mariinGeo = new THREE.BoxGeometry(1,1.8,1);
-let mariinMat = new THREE.MeshStandardMaterial({color:0xff0000});
-let mariin = new THREE.Mesh(mariinGeo, mariinMat);
-mariin.position.set(0,0.9,0);
-scene.add(mariin);
-
-// 🔹 Takistused (67)
-let obstacles = [], passed = 0;
-const TOTAL = 67;
-let spacing = 4;
-
-for(let i=0;i<TOTAL;i++){
-    let boxGeo = new THREE.BoxGeometry(1,1,1);
-    let boxMat = new THREE.MeshStandardMaterial({color:0x333333});
-    let box = new THREE.Mesh(boxGeo, boxMat);
-
-    box.position.set(i * spacing + 15, 0.5, 0);
-    scene.add(box);
-
-    obstacles.push(box);
+function clamp(value) {
+  return Math.max(0, Math.min(100, Math.round(value)));
 }
 
-// 🔹 Hüppefüüsika
-let isJumping = false;
-let velocity = 0;
-const gravity = -0.02;
-
-document.addEventListener('keydown', e => {
-    if(e.code === "Space" && !isJumping){
-        isJumping = true;
-        velocity = 0.35;
-    }
-});
-
-// 🔹 Animatsioon
-function animate(){
-    requestAnimationFrame(animate);
-
-    // Hüpe
-    if(isJumping){
-        mariin.position.y += velocity;
-        velocity += gravity;
-
-        if(mariin.position.y <= 0.9){
-            mariin.position.y = 0.9;
-            isJumping = false;
-        }
-    }
-
-    // Mariin liigub edasi automaatselt
-    mariin.position.x += 0.07;
-
-    // Takistuste kontroll
-    obstacles.forEach((obs) => {
-        // Hüpatud takistus
-        if(!obs.userData.passed && mariin.position.x > obs.position.x + 1){
-            obs.userData.passed = true;
-            passed++;
-            document.getElementById('score').innerText = `Üle hüpatud: ${passed} / ${TOTAL}`;
-        }
-
-        // Kokkupõrge
-        let dx = Math.abs(mariin.position.x - obs.position.x);
-        let dy = mariin.position.y;
-
-        if(dx < 1 && dy < 1){ // Mariin liiga madal → kokkupõrge
-            alert("Oih! Kokkupõrge! Üle hüpatud: " + passed);
-            location.reload();
-        }
-    });
-
-    // Kaamera jälgib Mariini
-    camera.position.x = mariin.position.x + 10;
-    camera.lookAt(mariin.position.x, mariin.position.y + 1, mariin.position.z);
-
-    renderer.render(scene, camera);
+function updateHud() {
+  foodNumber.textContent = `${state.food}%`;
+  waterNumber.textContent = `${state.water}%`;
+  cleanNumber.textContent = `${state.clean}%`;
+  playNumber.textContent = `${state.mood}%`;
+  foodFill.style.width = `${state.food}%`;
+  waterFill.style.width = `${state.water}%`;
+  cleanFill.style.width = `${state.clean}%`;
+  playFill.style.width = `${state.mood}%`;
+  timerValue.textContent = `${String(Math.floor(state.time / 60)).padStart(2,'0')}:${String(state.time % 60).padStart(2,'0')}`;
 }
-animate();
 
-// 🔹 Resize
-window.addEventListener('resize', ()=>{
-    camera.aspect = window.innerWidth/window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+function setMessage(text) {
+  messageBox.textContent = text;
+}
+
+function setStatusText(text) {
+  document.getElementById('game-state').textContent = text;
+}
+
+function setButtons(enabled) {
+  [feedButton, waterButton, cleanButton, playButton].forEach(button => {
+    button.disabled = !enabled;
+    button.closest('.action-card').classList.toggle('disabled', !enabled);
+  });
+}
+
+function updateGameState() {
+  if (state.gameOver || state.won) return;
+  if (state.food <= 0 || state.water <= 0 || state.clean <= 0 || state.mood <= 0) {
+    state.gameOver = true;
+    setMessage('Mäng läbi — üks näitaja langes alla 0%. Proovi uuesti.');
+    setStatusText('Kaotus');
+    setButtons(false);
+    return;
+  }
+  if (state.time >= duration) {
+    if (state.food > 40 && state.water > 40 && state.clean > 40 && state.mood > 40) {
+      state.won = true;
+      setMessage('Võit! Hoidsid hampstri tervise tippu 60 sekundi jooksul.');
+      setStatusText('Võit');
+      setButtons(false);
+    } else {
+      state.gameOver = true;
+      setMessage('Aeg otsas — hampster ei olnud piisavalt hästi hooldatud.');
+      setStatusText('Kaotus');
+      setButtons(false);
+    }
+  }
+}
+
+function performAction(type) {
+  if (state.gameOver || state.won) return;
+  switch(type) {
+    case 'feed':
+      state.food = clamp(state.food + 25);
+      state.mood = clamp(state.mood - 4);
+      setMessage('Sööda toimus! Hampster sai isu kustutatud.');
+      break;
+    case 'water':
+      state.water = clamp(state.water + 28);
+      state.clean = clamp(state.clean - 3);
+      setMessage('Vesi tehtud. Hampster joonisti ja tundus rahul.');
+      break;
+    case 'clean':
+      state.clean = clamp(state.clean + 32);
+      state.food = clamp(state.food - 5);
+      setMessage('Puur on nüüd puhas ja lõhnab värskelt.');
+      break;
+    case 'play':
+      state.mood = clamp(state.mood + 28);
+      state.water = clamp(state.water - 4);
+      state.food = clamp(state.food - 4);
+      setMessage('Mänguaeg! Hampster on õnnelik ja aktiivne.');
+      break;
+  }
+  updateHud();
+  updateGameState();
+}
+
+function resetGame() {
+  state.food = 90;
+  state.water = 90;
+  state.clean = 85;
+  state.mood = 80;
+  state.time = 0;
+  state.gameOver = false;
+  state.won = false;
+  setMessage('Mäng alanud! Hoolitse hampstri eest nutikalt.');
+  setStatusText('Mängus');
+  setButtons(true);
+  updateHud();
+}
+
+feedButton.addEventListener('click', () => performAction('feed'));
+waterButton.addEventListener('click', () => performAction('water'));
+cleanButton.addEventListener('click', () => performAction('clean'));
+playButton.addEventListener('click', () => performAction('play'));
+restartButton.addEventListener('click', resetGame);
+actionCards.forEach(card => {
+  card.addEventListener('click', () => {
+    const action = card.dataset.action;
+    if (!card.classList.contains('disabled')) performAction(action);
+  });
 });
 
+const tickInterval = setInterval(() => {
+  if (state.gameOver || state.won) return;
+  state.time += 1;
+  state.food = clamp(state.food - decay.food);
+  state.water = clamp(state.water - decay.water);
+  state.clean = clamp(state.clean - decay.clean);
+  state.mood = clamp(state.mood - decay.mood);
+  if (state.food <= 20 || state.water <= 20 || state.clean <= 20 || state.mood <= 20) {
+    setMessage('Häda! Pane tähele, millele vajab hamstri eest hooldus.');
+  }
+  updateHud();
+  updateGameState();
+}, 1000);
+
+resetGame();
 </script>
 </body>
 </html>
