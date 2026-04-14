@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="et">
+<head>
+<meta charset="UTF-8">
+<title>Mariin hüppab üle takistuste</title>
+<style>
+  body { margin: 0; overflow: hidden; background: #87CEEB; }
+  #score { position:absolute; top:10px; left:10px; color:white; font-family:sans-serif; font-size:20px; z-index:10; }
+</style>
+</head>
+<body>
+
+<div id="score">Üle hüpatud: 0 / 67</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+
+<script>
+
+// 🔹 Scène ja kaamera
+let scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87CEEB);
+
+let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera.position.set(0, 5, 20);
+
+let renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// 🔹 Valgustus
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+let dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+dirLight.position.set(5,10,7);
+scene.add(dirLight);
+
+// 🔹 Maapind
+const groundGeo = new THREE.PlaneGeometry(500, 100);
+const groundMat = new THREE.MeshStandardMaterial({color:0x228B22});
+let ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI/2;
+scene.add(ground);
+
+// 🔹 Mariin placeholder (punane kuubik)
+let mariinGeo = new THREE.BoxGeometry(1,1.8,1);
+let mariinMat = new THREE.MeshStandardMaterial({color:0xff0000});
+let mariin = new THREE.Mesh(mariinGeo, mariinMat);
+mariin.position.set(0,0.9,0);
+scene.add(mariin);
+
+// 🔹 Takistused (67)
+let obstacles = [], passed = 0;
+const TOTAL = 67;
+let spacing = 4;
+
+for(let i=0;i<TOTAL;i++){
+    let boxGeo = new THREE.BoxGeometry(1,1,1);
+    let boxMat = new THREE.MeshStandardMaterial({color:0x333333});
+    let box = new THREE.Mesh(boxGeo, boxMat);
+
+    box.position.set(i * spacing + 15, 0.5, 0);
+    scene.add(box);
+
+    obstacles.push(box);
+}
+
+// 🔹 Hüppefüüsika
+let isJumping = false;
+let velocity = 0;
+const gravity = -0.02;
+
+document.addEventListener('keydown', e => {
+    if(e.code === "Space" && !isJumping){
+        isJumping = true;
+        velocity = 0.35;
+    }
+});
+
+// 🔹 Animatsioon
+function animate(){
+    requestAnimationFrame(animate);
+
+    // Hüpe
+    if(isJumping){
+        mariin.position.y += velocity;
+        velocity += gravity;
+
+        if(mariin.position.y <= 0.9){
+            mariin.position.y = 0.9;
+            isJumping = false;
+        }
+    }
+
+    // Mariin liigub edasi automaatselt
+    mariin.position.x += 0.07;
+
+    // Takistuste kontroll
+    obstacles.forEach((obs) => {
+        // Hüpatud takistus
+        if(!obs.userData.passed && mariin.position.x > obs.position.x + 1){
+            obs.userData.passed = true;
+            passed++;
+            document.getElementById('score').innerText = `Üle hüpatud: ${passed} / ${TOTAL}`;
+        }
+
+        // Kokkupõrge
+        let dx = Math.abs(mariin.position.x - obs.position.x);
+        let dy = mariin.position.y;
+
+        if(dx < 1 && dy < 1){ // Mariin liiga madal → kokkupõrge
+            alert("Oih! Kokkupõrge! Üle hüpatud: " + passed);
+            location.reload();
+        }
+    });
+
+    // Kaamera jälgib Mariini
+    camera.position.x = mariin.position.x + 10;
+    camera.lookAt(mariin.position.x, mariin.position.y + 1, mariin.position.z);
+
+    renderer.render(scene, camera);
+}
+animate();
+
+// 🔹 Resize
+window.addEventListener('resize', ()=>{
+    camera.aspect = window.innerWidth/window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+</script>
+</body>
+</html>
